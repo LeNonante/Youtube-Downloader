@@ -4,16 +4,17 @@ from tkinter import filedialog, ttk
 import customtkinter
 from PIL import Image
 
+import time #??
+import asyncio
 
-
-def TelechargerUneVideo(Lien, Output, format="mp4"):
+def TelechargerUneVideo(Lien, Output, Format="MP4"):
     try:
         yt = YouTube(Lien)
 
-        if format == "MP4":
+        if Format == "MP4":
             # Télécharger la vidéo avec la plus haute résolution
             yd = yt.streams.get_highest_resolution()
-        elif format == "MP3":
+        elif Format == "MP3":
             # Télécharger uniquement l'audio
             yd = yt.streams.filter(only_audio=True).first()
 
@@ -21,7 +22,7 @@ def TelechargerUneVideo(Lien, Output, format="mp4"):
         downloaded_file = yd.download(output_path=Output)
 
         # Si c'est un format audio (mp3), renommer le fichier en .mp3
-        if format == "MP3":
+        if Format == "MP3":
             base, ext = os.path.splitext(downloaded_file)
             new_file = base + '.mp3'
             os.rename(downloaded_file, new_file)
@@ -49,7 +50,10 @@ class Window(Tk):
 
         self.CheminDossier=""
 
-        self.listeURL=[]
+
+        self.listeURL=[] #Contiendra la liste des liens de de la forme [lien,Format,Dossier, Bool] avec Bool sur False tant que le lien n'a pas été converti
+        self.TelechargementLance=False
+        self.NombreTelecharges=0#Compte le nombre de videos telechargees
         #Frame des entrées---------------
         self.Logo = customtkinter.CTkImage(light_image=Image.open("assets/LogoYouDownLight.png"),
                                   dark_image=Image.open("assets/LogoYouDownDark.png"),size=(100, 69))
@@ -144,13 +148,14 @@ class Window(Tk):
                     self.TextConfirmation.set("Veuillez sélectionner un dossier de sortie")
                     self.LabelConfirmation.configure(text_color=("red","#DF0000"))
                 else :
-                        if lien in self.listeURL:
+                        if ((lien, False) in self.listeURL) or ((lien, True) in self.listeURL):
                             self.TextConfirmation.set("Cette vidéo est déja dans la liste")
                             self.LabelConfirmation.configure(text_color=("red","#DF0000"))
                         else :
-                            self.listeURL.append(lien)
                             Format=['MP4','MP3'][self.radio_var.get()-1]
                             Etat="Attente"
+                            Dossier=self.CheminDossier
+                            self.listeURL.append([lien,Format,Dossier,False])
                             self.tree.insert("", "end", values=(titre, Format, Etat))
                             if len(titre)>25:
                                 self.TextConfirmation.set(titre[:22]+ "...\n a été ajouté à la liste")
@@ -195,11 +200,28 @@ class Window(Tk):
         self.SetDarkTheme()
         self.mainloop()
 
+    def telechargerListe(self):
+        print('qdqsdqsd') #??
+        if self.TelechargementLance==False : #Si aucun telechargment n'est en cours
+            self.TelechargementLance=True#On enregoistre l'etat des telechargement sur True
+            while self.NombreTelecharges!= len(self.listeURL) : #Tant qu'on a pas tout telechargé
+                for i in range(len(self.listeURL)): #On parcourt la liste jusqu'a trouvé le premier non telechargé
+                    if self.listeURL[i][3]==False :
+                        lien=self.listeURL[i][0]
+                        Format=self.listeURL[i][1]
+                        Dossier=self.listeURL[i][2]
+                        #TelechargerUneVideo(lien, Dossier, Format)
+                        print(lien,Format,Dossier)#??
+                        time.sleep(5)#??
+                        self.listeURL[i][3]=True
+                        self.NombreTelecharges+=1
+                        break
+
+
 
 Fenetre=Window()
 Fenetre.Afficher()
 
-#Verif si deja dans la liste avant de DL
 #Compter le nombre de DL a faire
 
 
