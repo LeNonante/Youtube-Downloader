@@ -46,12 +46,6 @@ class Window(Tk):
     def __init__(self):
         super().__init__()
 
-        #Creer la boucle pour la fonction asynchrone
-        self.loop = asyncio.new_event_loop()
-        threading.Thread(target=self.start_loop, daemon=True).start()
-
-
-
         self.title=("YouDown")
         self.geometry("740x580")
         self.configure(background="#F3F3F3")
@@ -106,21 +100,21 @@ class Window(Tk):
 
 
 
-        self.FrameEntrees.place(x=430,y=0)
+        self.FrameEntrees.place(x=33,y=0)
 
 
 
         #Séparateur ---------------------------------------------------
         self.Separateur=customtkinter.CTkFrame(self, width=4, height=412, fg_color=("red","#DF0000"))
-        self.Separateur.place(x=351,y=84)
+        self.Separateur.place(x=305,y=84)
 
         self.ModeBouton= StringVar(value="Light")
         self.BoutonMode=customtkinter.CTkButton(self, textvariable=self.ModeBouton,text_color=("black","#dce4ee"), corner_radius=15, width=45, height=30, fg_color=("#D9D9D9","#252525"), hover_color=("red","#A50000"), command=self.SwitchTheme)
-        self.BoutonMode.place(x=42, y=30)
+        self.BoutonMode.place(x=352, y=30)
 
 
         self.BoutonDoc=customtkinter.CTkButton(self, text="Aide",text_color=("black","#dce4ee"), corner_radius=15, width=45, height=30, fg_color=("#D9D9D9","#252525"), hover_color=("red","#A50000"))
-        self.BoutonDoc.place(x=112, y=30)
+        self.BoutonDoc.place(x=422, y=30)
 
 
         #PARTIE GAUCHE-------------------------------------------------
@@ -136,11 +130,7 @@ class Window(Tk):
         self.tree.column("col3", width=75, anchor="center")
 
 
-        self.tree.place(x=42,y=84, height=412)
-
-    def start_loop(self):
-        asyncio.set_event_loop(self.loop)
-        self.loop.run_forever()
+        self.tree.place(x=352,y=84, height=412)
 
 
     def AppuiBoutonConvert(self):
@@ -176,8 +166,6 @@ class Window(Tk):
                                 self.TextConfirmation.set(titre+ "\n a été ajouté à la liste")
                                 self.LabelConfirmation.configure(text_color=("black","#dce4ee"))
 
-                            # Démarrer la tâche asynchrone sans bloquer le thread principal
-                            self.loop.create_task(self.TelechargerListe())
 
 
 
@@ -217,32 +205,26 @@ class Window(Tk):
         self.SetDarkTheme()
         self.mainloop()
 
-    async def TelechargerListe(self):
-        if self.TelechargementLance==False : #Si aucun telechargment n'est en cours
-            self.TelechargementLance=True#On enregoistre l'etat des telechargement sur True
-            NbTelecharges=self.NombreTelecharges
-            NbLien=len(self.listeURL)
-            while NbTelecharges!= NbLien : #Tant qu'on a pas tout telechargé
-                for i in range(len(self.listeURL)): #On parcourt la liste jusqu'a trouvé le premier non telechargé
-                    if self.listeURL[i][3]==False :
-                        lien=self.listeURL[i][0]
-                        Format=self.listeURL[i][1]
-                        Dossier=self.listeURL[i][2]
-                        TelechargerUneVideo(lien, Dossier, Format)
-                        print(lien,Format,Dossier)#??
-
-                        with open("C:/Users/aurel/Desktop/Test/"+str(i)+".txt", 'w') as fichier:
-                            # Écrire le contenu dans le fichier
-                            fichier.write("ee")
-
-
-                        #await asyncio.sleep(5)#??
-                        self.listeURL[i][3]=True
-                        self.NombreTelecharges+=1
-                        break
-                NbTelecharges=self.NombreTelecharges
-                NbLien=len(self.listeURL)
-            self.TelechargementLance=False
+    def TelechargerListe(self):
+        pass
+##        if self.TelechargementLance==False : #Si aucun telechargment n'est en cours
+##            self.TelechargementLance=True#On enregoistre l'etat des telechargement sur True
+##            NbTelecharges=self.NombreTelecharges
+##            NbLien=len(self.listeURL)
+##            while NbTelecharges!= NbLien : #Tant qu'on a pas tout telechargé
+##                for i in range(len(self.listeURL)): #On parcourt la liste jusqu'a trouvé le premier non telechargé
+##                    if self.listeURL[i][3]==False :
+##                        lien=self.listeURL[i][0]
+##                        Format=self.listeURL[i][1]
+##                        Dossier=self.listeURL[i][2]
+##                        TelechargerUneVideo(lien, Dossier, Format)
+##                        print(lien,Format,Dossier)#??
+##                        self.listeURL[i][3]=True
+##                        self.NombreTelecharges+=1
+##                        break
+##                NbTelecharges=self.NombreTelecharges
+##                NbLien=len(self.listeURL)
+##            self.TelechargementLance=False
 
 
 Fenetre=Window()
