@@ -4,8 +4,9 @@ from tkinter import filedialog, ttk
 import customtkinter
 from PIL import Image
 
-import time #??
+
 import asyncio
+import threading
 
 def TelechargerUneVideo(Lien, Output, Format="MP4"):
     try:
@@ -44,6 +45,13 @@ def RecupTitreVideo(Lien):
 class Window(Tk):
     def __init__(self):
         super().__init__()
+
+        #Creer la boucle pour la fonction asynchrone
+        self.loop = asyncio.new_event_loop()
+        threading.Thread(target=self.start_loop, daemon=True).start()
+
+
+
         self.title=("YouDown")
         self.geometry("740x580")
         self.configure(background="#F3F3F3")
@@ -130,6 +138,10 @@ class Window(Tk):
 
         self.tree.place(x=42,y=84, height=412)
 
+    def start_loop(self):
+        asyncio.set_event_loop(self.loop)
+        self.loop.run_forever()
+
 
     def AppuiBoutonConvert(self):
         lien=self.EntryLien.get()
@@ -148,7 +160,7 @@ class Window(Tk):
                     self.TextConfirmation.set("Veuillez sélectionner un dossier de sortie")
                     self.LabelConfirmation.configure(text_color=("red","#DF0000"))
                 else :
-                        if ((lien, False) in self.listeURL) or ((lien, True) in self.listeURL):
+                        if any(lien in elements for elements in self.listeURL): #On verifie si le lien est déja dans la liste
                             self.TextConfirmation.set("Cette vidéo est déja dans la liste")
                             self.LabelConfirmation.configure(text_color=("red","#DF0000"))
                         else :
@@ -163,6 +175,11 @@ class Window(Tk):
                             else :
                                 self.TextConfirmation.set(titre+ "\n a été ajouté à la liste")
                                 self.LabelConfirmation.configure(text_color=("black","#dce4ee"))
+
+                            # Démarrer la tâche asynchrone sans bloquer le thread principal
+                            self.loop.create_task(self.TelechargerListe())
+
+
 
     def ChoisirDossier(self):
         """Cette fonction ouvre l'explorateur de fichier et permet d'ouvrir un dossier en renvoyant son chemin"""
@@ -200,23 +217,32 @@ class Window(Tk):
         self.SetDarkTheme()
         self.mainloop()
 
-    def telechargerListe(self):
-        print('qdqsdqsd') #??
+    async def TelechargerListe(self):
         if self.TelechargementLance==False : #Si aucun telechargment n'est en cours
             self.TelechargementLance=True#On enregoistre l'etat des telechargement sur True
-            while self.NombreTelecharges!= len(self.listeURL) : #Tant qu'on a pas tout telechargé
+            NbTelecharges=self.NombreTelecharges
+            NbLien=len(self.listeURL)
+            while NbTelecharges!= NbLien : #Tant qu'on a pas tout telechargé
                 for i in range(len(self.listeURL)): #On parcourt la liste jusqu'a trouvé le premier non telechargé
                     if self.listeURL[i][3]==False :
                         lien=self.listeURL[i][0]
                         Format=self.listeURL[i][1]
                         Dossier=self.listeURL[i][2]
-                        #TelechargerUneVideo(lien, Dossier, Format)
+                        TelechargerUneVideo(lien, Dossier, Format)
                         print(lien,Format,Dossier)#??
-                        time.sleep(5)#??
+
+                        with open("C:/Users/aurel/Desktop/Test/"+str(i)+".txt", 'w') as fichier:
+                            # Écrire le contenu dans le fichier
+                            fichier.write("ee")
+
+
+                        #await asyncio.sleep(5)#??
                         self.listeURL[i][3]=True
                         self.NombreTelecharges+=1
                         break
-
+                NbTelecharges=self.NombreTelecharges
+                NbLien=len(self.listeURL)
+            self.TelechargementLance=False
 
 
 Fenetre=Window()
