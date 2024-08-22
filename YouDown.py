@@ -5,30 +5,33 @@ import customtkinter
 from PIL import Image
 import time
 
-def TelechargerUneVideo(Lien, Output, Format="MP4"):
-    try:
-        yt = YouTube(Lien)
+import ffmpeg
+import yt_dlp
 
-        if Format == "MP4":
-            # Télécharger la vidéo avec la plus haute résolution
-            yd = yt.streams.get_highest_resolution()
-        elif Format == "MP3":
-            # Télécharger uniquement l'audio
-            yd = yt.streams.filter(only_audio=True).first()
-
-        # Télécharger le fichier dans le dossier spécifié
-        downloaded_file = yd.download(output_path=Output)
-
-        # Si c'est un format audio (mp3), renommer le fichier en .mp3
-        if Format == "MP3":
-            base, ext = os.path.splitext(downloaded_file)
-            new_file = base + '.mp3'
-            os.rename(downloaded_file, new_file)
-            print("Téléchargement terminé en format MP3.")
-        else:
-            print("Téléchargement terminé en format MP4.")
-    except Exception as e:
-        print("Une erreur s'est produite:", str(e))
+##def TelechargerUneVideo(Lien, Output, Format="MP4"):
+##    try:
+##        yt = YouTube(Lien)
+##
+##        if Format == "MP4":
+##            # Télécharger la vidéo avec la plus haute résolution
+##            yd = yt.streams.get_highest_resolution()
+##        elif Format == "MP3":
+##            # Télécharger uniquement l'audio
+##            yd = yt.streams.filter(only_audio=True).first()
+##
+##        # Télécharger le fichier dans le dossier spécifié
+##        downloaded_file = yd.download(output_path=Output)
+##
+##        # Si c'est un format audio (mp3), renommer le fichier en .mp3
+##        if Format == "MP3":
+##            base, ext = os.path.splitext(downloaded_file)
+##            new_file = base + '.mp3'
+##            os.rename(downloaded_file, new_file)
+##            print("Téléchargement terminé en format MP3.")
+##        else:
+##            print("Téléchargement terminé en format MP4.")
+##    except Exception as e:
+##        print("Une erreur s'est produite:", str(e))
 
 def RecupTitreVideo(Lien):
     try:
@@ -139,9 +142,13 @@ class Window(Tk):
         self.BoutonConvert.place(x=443, y=390)
 
         self.TextConfirmationDroite=StringVar(value="")
-        self.LabelConfirmationDroite=customtkinter.CTkLabel(self, textvariable=self.TextConfirmationDroite,width=235, height=100)
-        self.LabelConfirmationDroite.place(x=443,y=430)
+        self.LabelConfirmationDroite=customtkinter.CTkLabel(self, textvariable=self.TextConfirmationDroite,width=235, height=100, bg_color="red")
+        self.LabelConfirmationDroite.place(x=443,y=440)
 
+        self.ProgressValue=0
+        self.ProgressBar=customtkinter.CTkProgressBar(self, width=235,mode="determinate", progress_color=("red","#DF0000"),corner_radius=15, fg_color=("#D9D9D9","#252525"))
+        self.ProgressBar.set(0)
+        self.ProgressBar.place(x=1000, y=1000)
 
     def AppuiBoutonAddToList(self):
         lien=self.EntryLien.get()
@@ -190,15 +197,15 @@ class Window(Tk):
             output= video[1][4]
 
         #Mettre fpocus sur celui qui se fait DL
+            self.ProgressBar.place(x=443, y=450)
+            if len(titre)>25:
+                self.TextConfirmationDroite.set(str(self.ProgressValue)+"%\n"+titre[:22]+ "...\n en cours de télechargement")
+            else :
+                self.TextConfirmationDroite.set(titre+ "\n en cours de télechargement")
+            self.download_une_video(Lien, output, Format)
 
-##            titre=video[4]
-##            if len(titre)>25:
-##                self.TextConfirmationDroite.set(titre[:22]+ "...\n en cours de télechargement")
-##            else :
-##                self.TextConfirmationDroite.set(titre+ "\n en cours de télechargement")
-
-
-        #self.MasquePartieEntrees.place(x=1000,y=1000)
+        self.ProgressBar.place(x=1000, y=1000)
+        self.MasquePartieEntrees.place(x=1000,y=1000)
 
     def ChoisirDossier(self):
         """Cette fonction ouvre l'explorateur de fichier et permet d'ouvrir un dossier en renvoyant son chemin"""
@@ -233,9 +240,59 @@ class Window(Tk):
         self.treestyle.theme_use('default')
         self.treestyle.configure("Treeview", background="#D9D9D9", foreground="black", fieldbackground="#D9D9D9", borderwidth=0)
         self.treestyle.map('Treeview', background=[('selected', "#D9D9D9")], foreground=[('selected', "red")])
+
+
+    def progress_hook(self,d):
+        if d['status'] == 'downloading':
+            if 'progress' in d:
+                self.ProgressValue = d['progress'] * 100
+        elif d['status'] == 'finished':
+            self.ProgressValue
+
+
+    def download_une_video(self, Lien, Output, Format="MP4"):
+        # Configure l'option de téléchargement en fonction du format choisi
+        if Format == 'MP4':
+            ydl_opts = {
+                'format': 'mp4',
+                'outtmpl': '%(title)s.%(ext)s',
+                'progress_hooks': [self.progress_hook],
+            }
+        elif Format == 'MP3':
+            ydl_opts = {
+                'format': 'bestaudio/best',
+                'postprocessors': [{
+                    'key': 'FFmpegExtractAudio',
+                    'preferredcodec': 'mp3',
+                    'preferredquality': '192',
+                }],
+                'outtmpl': '%(title)s.%(ext)s',
+                'progress_hooks': [self.progress_hook],
+            }
+        else:
+            raise ValueError("Format choisi non supporté. Utilisez 'mp4' ou 'mp3'.")
+
+        # Création d'une instance yt_dlp.YoutubeDL avec les options configurées
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info_dict = ydl.extract_info(Lien, download=True, )
+
+
+            # Boucle pour mettre à jour la variable d'avancement toutes les secondes
+            while self.ProgressValue < 100:
+                self.ProgressBar.set(self.ProgressValue/100)
+            print("Téléchargement terminé.")
+
+
+
+
+
+
     def Afficher(self):
         self.SetDarkTheme()
         self.mainloop()
+
+
+
 
 
 
