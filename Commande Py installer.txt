@@ -1,0 +1,3 @@
+pyinstaller --onefile YoutubeDownloader.py
+
+Avoir fmpeg au meme endroit que le .exe quand distribué
