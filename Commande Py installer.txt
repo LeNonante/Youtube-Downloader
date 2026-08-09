@@ -1,3 +1,10 @@
+SI 64 bit (python de base)
 pyinstaller --onefile YoutubeDownloader.py
+
+Si 32Bit (installer un python 32 bit)
+#Intaller les dépendances
+py -3-32 -m PyInstaller --onefile --add-binary "ffmpeg.exe;." downloader.py
+#Lancer pyinstaller
+py -3-32 -m PyInstaller --onefile YoutubeDownloader.py
 
 Avoir fmpeg au meme endroit que le .exe quand distribué
